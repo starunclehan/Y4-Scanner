@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>ENGINE PERFORMANCE ANALYZER - Professional Hybrid</title>
+    <style>
+        body { background:#000; color:#0f0; font-family:'Consolas', monospace; text-align:center; margin:0; padding:20px; overflow-x: hidden; }
+        h1 { color:#0f0; letter-spacing:2px; margin-bottom:5px; text-shadow: 0 0 10px rgba(0,255,0,0.5); }
+        .container { max-width:1080px; margin:0 auto; }
+        
+        button { padding:12px 20px; margin:8px; font-size:15px; background:#111; color:#0f0; border:1px solid #0f0; cursor:pointer; border-radius:4px; font-weight:bold; transition: 0.2s; }
+        button:hover { background:#0f0; color:#000; box-shadow: 0 0 10px #0f0; }
+        button:disabled { opacity:0.3; cursor:not-allowed; border-color: #333; color: #333; }
+        
+        #status { font-size:18px; margin:15px 0; color:#ff0; font-weight:bold; height: 24px; }
+        #live-value { font-size:48px; font-weight:bold; color:#0ff; margin:10px 0; text-shadow: 0 0 15px rgba(0,255,255,0.4); }
+        
+        .progress-container { height:26px; background:#111; border:1px solid #0f0; margin:20px 0; position:relative; border-radius:13px; overflow:hidden; display:none; }
+        .progress-bar { height:100%; width:0%; background:linear-gradient(90deg, #050, #0f0); transition: width 0.2s linear; }
+        .progress-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#000; font-weight:900; font-size:14px; z-index: 2; }
+        
+        #graph { display:flex; justify-content:center; align-items:flex-end; height:280px; margin:30px 0; gap:12px; background: rgba(0,255,0,0.02); border-radius: 8px; padding: 10px; }
+        .bar-container { display:flex; flex-direction:column; align-items:center; flex:1; max-width:70px; }
+        .bar { width:100%; background:#0f0; border-radius:4px 4px 0 0; transition:height 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .bar-label { margin-top:8px; font-size:13px; color:#aaa; line-height:1.4; }
+        .bar-score { font-weight:bold; color:#fff; }
+        
+        #result-text { margin-top:25px; padding:25px; background:#050505; border:2px solid #0f0; border-radius:12px; font-size:16px; line-height:1.8; text-align:left; max-width:900px; margin-left:auto; margin-right:auto; box-shadow: 0 0 20px rgba(0,255,0,0.15); display:none; }
+        
+        #sensor-monitor { margin: 25px auto; padding: 18px; background: #080808; border: 1px solid #333; border-radius: 10px; max-width: 1000px; }
+        .sensor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 30px; }
+        .sensor-item { display: flex; justify-content: space-between; font-size: 14px; border-bottom: 1px solid #1a1a1a; padding: 8px 5px; cursor: pointer; transition: background 0.2s; }
+        .sensor-item:hover { background: #111; color: #fff; }
+        .sensor-name { color: #888; }
+        .sensor-value { color: #0ff; font-weight: bold; }
+        
+        #speed-tag { background: #111; border: 1px solid #0f0; padding: 2px 8px; border-radius: 4px; font-size: 13px; color: #0f0; margin-left: 15px; display: inline-block; vertical-align: middle; }
+
+        /* 그래프 모드(모달) 강화 스타일 */
+        #modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100; justify-content:center; align-items:center; }
+        #modal-content { background:#000; border:2px solid #0f0; padding:20px; border-radius:10px; width:95%; max-width:1000px; max-height: 90vh; overflow-y: auto; position:relative; box-shadow:0 0 30px rgba(0,255,0,0.2); }
+        #close-modal { position:absolute; top:10px; right:15px; color:#f00; font-size:24px; cursor:pointer; font-weight:bold; z-index: 10; }
+        
+        .modal-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px; border-bottom: 1px solid #222; position: sticky; top: 0; background: #000; z-index: 5; }
+        .graph-unit { position: relative; margin-bottom: 15px; background: #050505; border: 1px solid #333; padding: 10px; border-radius: 8px; }
+        .graph-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .graph-title { font-size: 14px; font-weight: bold; text-transform: uppercase; }
+        canvas { width: 100%; height: 200px; display: block; image-rendering: crisp-edges; }
+        
+        .check-area { display: flex; align-items: center; gap: 5px; color: #888; font-size: 12px; }
+        select, .ctrl-btn { background: #111; color: #0f0; border: 1px solid #0f0; padding: 5px 10px; border-radius: 4px; font-family: inherit; font-size: 13px; cursor: pointer; }
+        .ctrl-btn:hover { background: #0f0; color: #000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ENGINE PERFORMANCE ANALYZER<br><small style="font-size:0.4em;color:#444;letter-spacing:1px;">HIGH-SPEED DATA ACQUISITION SYSTEM</small></h1>
+        
+        <div style="margin:15px 0; display: flex; justify-content: center; align-items: center;">
+            <label style="font-size:14px;color:#888;">실린더 수 설정: </label>
+            <input type="number" id="cyl" value="6" min="1" max="12" style="width:60px;text-align:center;background:#000;color:#0f0;border:1px solid #0f0;padding:5px;font-size:16px;border-radius:4px; margin-left:10px;">
+            <div id="speed-tag">통신 속도: <span id="data-speed">---</span></div>
+        </div>
+
+        <div style="margin:20px 0;">
+            <button id="connect">OBD-II 연결 (vLinker)</button>
+            <button id="analyze" disabled>엔진 균형 분석 (RPM)</button>
+            <button id="headAnalyze" disabled>헤드 성능 분석 (MAP)</button>
+            <button id="disconnect" disabled>연결 해제</button>
+        </div>
+
+        <div id="status">READY</div>
+        <div id="live-value">---</div>
+
+        <div id="sensor-monitor">
+            <div style="color:#0f0; font-size:13px; margin-bottom:10px; border-bottom:1px solid #222; padding-bottom:5px;">REAL-TIME SENSOR MONITORING (CLICK TO VIEW GRAPH)</div>
+            <div class="sensor-grid" id="sensor-grid"></div>
+        </div>
+
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+            <div class="progress-text" id="progress-text">READY</div>
+        </div>
+        <div id="graph"></div>
+        <div id="result-text"></div>
+    </div>
+
+    <div id="modal-overlay">
+        <div id="modal-content">
+            <div id="close-modal">&times;</div>
+            <div class="modal-controls">
+                <select id="sensor-select">
+                    <option value="">+ 센서 추가 선택</option>
+                </select>
+                <button id="merge-btn" class="ctrl-btn">합치기</button>
+                <div>
+                    <button id="pause-btn" class="ctrl-btn">정지 (Pause)</button>
+                    <button id="resume-btn" class="ctrl-btn" style="display:none;">재생 (Resume)</button>
+                </div>
+            </div>
+            <div id="graph-list"></div>
+            <div id="merged-graph-container"></div>
+        </div>
+    </div>
+
+<script>
+    let port = null, reader = null, writer = null;
+    let isConnected = false, isAnalyzing = false, isPaused = false;
+    let lastResponseTime = 0, monitorTimer = null;
+    const encoder = new TextEncoder(), decoder = new TextDecoder();
+
+    // 그래프 관리 변수
+    let activeSensors = []; // [{name, color, isMerged}]
+    let historyData = {};
+    const MAX_HISTORY = 50;
+    const warmColors = ["#ff4757", "#ffa502"]; 
+    const coolColors = ["#2e86de", "#1dd1a1"];
+
+    const sensors = [
+        {pid: "010C", name: "rpm", unit: "rpm", byte_len: 4},
+        {pid: "010B", name: "map", unit: "kPa", byte_len: 2},
+        {pid: "0105", name: "ect", unit: "°C", byte_len: 2},
+        {pid: "0104", name: "Load_PCT", unit: "%", byte_len: 2},
+        {pid: "0107", name: "LTFT1", unit: "%", byte_len: 2},
+        {pid: "0109", name: "LTFT2", unit: "%", byte_len: 2},
+        {pid: "0114", name: "o2s11", unit: "V", byte_len: 4},
+        {pid: "0115", name: "o2s12", unit: "V", byte_len: 4},
+        {pid: "0118", name: "o2s21", unit: "V", byte_len: 4},
+        {pid: "0119", name: "o2s22", unit: "V", byte_len: 4},
+        {pid: "0142", name: "VPWR", unit: "V", byte_len: 4},
+        {pid: "0124", name: "Lambda", unit: "", byte_len: 4}
+    ];
+
+    async function send(cmd, timeoutMs = 600) {
+        if (!writer) return "";
+        const start = Date.now();
+        try {
+            await writer.write(encoder.encode(cmd + "\r"));
+            let response = "";
+            while (Date.now() - start < timeoutMs) {
+                const result = await Promise.race([
+                    reader.read(),
+                    new Promise(r => setTimeout(() => r({done:true, value:null}), timeoutMs))
+                ]);
+                if (result && result.value) response += decoder.decode(result.value);
+                if (response.includes(">")) break;
+            }
+            lastResponseTime = Date.now() - start;
+            return response.replace(/[\s\r\n]/g, "").toUpperCase();
+        } catch (e) { return ""; }
+    }
+
+    function initSensorMonitor() {
+        const grid = document.getElementById("sensor-grid");
+        const select = document.getElementById("sensor-select");
+        grid.innerHTML = "";
+        select.innerHTML = '<option value="">+ 센서 추가 선택</option>';
+        
+        sensors.forEach(s => {
+            historyData[s.name] = [];
+            const div = document.createElement("div");
+            div.className = "sensor-item";
+            div.onclick = () => openGraphMode(s.name);
+            div.innerHTML = `<span class="sensor-name">${s.name}</span><span class="sensor-value" id="val-${s.name}">---</span>`;
+            grid.appendChild(div);
+            
+            const opt = document.createElement("option");
+            opt.value = s.name; opt.innerText = s.name.toUpperCase();
+            select.appendChild(opt);
+        });
+    }
+
+    async function updateSensorValues() {
+        if (!isConnected || isAnalyzing) return;
+        for (let s of sensors) {
+            const res = await send(s.pid, 180);
+            const marker = "41" + s.pid.substring(2);
+            const pos = res.indexOf(marker);
+            if (pos !== -1) {
+                const hex = res.substring(pos + 4, pos + 4 + s.byte_len);
+                if (hex.length < s.byte_len) continue;
+                let num = parseInt(hex, 16);
+                let value = null;
+                if (!isNaN(num)) {
+                    if (s.name === "rpm") value = Math.round(num / 4);
+                    else if (s.name === "map") value = num;
+                    else if (s.name === "ect") value = num - 40;
+                    else if (s.name === "Load_PCT") value = parseFloat((num / 2.55).toFixed(1));
+                    else if (s.name.includes("LTFT")) value = parseFloat((num / 1.28 - 100).toFixed(1));
+                    else if (s.name.startsWith("o2s")) value = parseFloat((parseInt(hex.substring(0, 2), 16) / 200).toFixed(2));
+                    else if (s.name === "VPWR") value = parseFloat((num / 1000).toFixed(1));
+                    else if (s.name === "Lambda") {
+                        let a = parseInt(hex.substring(0, 2), 16), b = parseInt(hex.substring(2, 4), 16);
+                        value = parseFloat(((a * 256 + b) / 32768).toFixed(3));
+                    }
+                }
+                if (value !== null) {
+                    const el = document.getElementById(`val-${s.name}`);
+                    if (el) el.innerText = value + (s.unit ? " " + s.unit : "");
+                    if (!isPaused) {
+                        historyData[s.name].push(value);
+                        if (historyData[s.name].length > MAX_HISTORY) historyData[s.name].shift();
+                    }
+                }
+            }
+        }
+        document.getElementById("data-speed").innerText = `${lastResponseTime}ms`;
+        renderPopGraphs();
+    }
+
+    // --- 그래프 모드 수정 로직 (지시사항 반영) ---
+    function openGraphMode(firstName) {
+        activeSensors = [];
+        document.getElementById("graph-list").innerHTML = "";
+        document.getElementById("merged-graph-container").innerHTML = "";
+        addSensor(firstName);
+        document.getElementById("modal-overlay").style.display = "flex";
+    }
+
+    function addSensor(name) {
+        if (activeSensors.find(s => s.name === name)) return;
+        
+        // Warm-Cool 대비 색상 임의 선택
+        const isWarm = activeSensors.filter(s => !s.isMerged).length % 2 === 0;
+        const color = isWarm ? warmColors[Math.floor(Math.random()*2)] : coolColors[Math.floor(Math.random()*2)];
+
+        const unit = document.createElement("div");
+        unit.className = "graph-unit";
+        unit.id = `unit-${name}`;
+        unit.innerHTML = `
+            <div class="graph-header">
+                <span class="graph-title" style="color:${color}">${name.toUpperCase()}</span>
+                <div class="check-area">
+                    <input type="checkbox" class="merge-chk" data-name="${name}"> 병합
+                </div>
+            </div>
+            <canvas id="canvas-${name}"></canvas>
+        `;
+        document.getElementById("graph-list").appendChild(unit);
+        activeSensors.push({ name, color, isMerged: false });
+    }
+
+    function renderPopGraphs() {
+        if (document.getElementById("modal-overlay").style.display !== "flex") return;
+
+        activeSensors.forEach(s => {
+            if (!s.isMerged) {
+                const canvas = document.getElementById(`canvas-${s.name}`);
+                if (canvas) drawGraphToCanvas(canvas, s.name, s.color);
+            }
+        });
+
+        const mergedCanvas = document.getElementById("canvas-merged");
+        if (mergedCanvas) drawMergedCanvas(mergedCanvas);
+    }
+
+    function drawGraphToCanvas(canvas, sensorName, color) {
+        const ctx = canvas.getContext("2d");
+        const data = historyData[sensorName] || [];
+        
+        // 고해상도 선명도 처리
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+        ctx.scale(dpr, dpr);
+
+        ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+        if (data.length < 2) return;
+
+        const max = Math.max(...data) * 1.1 || 1;
+        const min = Math.min(...data) * 0.9 || 0;
+        const range = max - min;
+        const avg = (data.reduce((a, b) => a + b, 0) / data.length).toFixed(2);
+        const now = data[data.length - 1];
+
+        // 파형 그리기
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        data.forEach((v, i) => {
+            const x = (i / (MAX_HISTORY - 1)) * canvas.clientWidth;
+            const y = canvas.clientHeight - ((v - min) / range) * canvas.clientHeight;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // 텍스트 오버레이 (원본 형식 준수 + 선명한 폰트)
+        ctx.fillStyle = color;
+        ctx.font = "12px 'Consolas', monospace";
+        ctx.fillText(`MAX: ${max.toFixed(2)}`, 10, 20);
+        ctx.fillText(`MIN: ${min.toFixed(2)}`, 10, canvas.clientHeight - 10);
+        ctx.fillText(`AVG: ${avg}`, canvas.clientWidth / 2 - 30, 20);
+        
+        ctx.font = "bold 14px 'Consolas', monospace";
+        ctx.textAlign = "right";
+        ctx.fillText(`NOW: ${now}`, canvas.clientWidth - 10, 25);
+        ctx.textAlign = "left";
+    }
+
+    function drawMergedCanvas(canvas) {
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+
+        const mergedList = activeSensors.filter(s => s.isMerged);
+        mergedList.forEach((s, idx) => {
+            const data = historyData[s.name] || [];
+            if (data.length < 2) return;
+
+            const max = Math.max(...data) * 1.1 || 1;
+            const min = Math.min(...data) * 0.9 || 0;
+            const range = max - min;
+
+            ctx.strokeStyle = s.color;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            data.forEach((v, i) => {
+                const x = (i / (MAX_HISTORY - 1)) * canvas.clientWidth;
+                const y = canvas.clientHeight - ((v - min) / range) * canvas.clientHeight;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // 병합 그래프용 선명한 수치 표기
+            ctx.fillStyle = s.color;
+            ctx.font = "11px 'Consolas', monospace";
+            ctx.fillText(`${s.name.toUpperCase()}: ${data[data.length-1]}`, 10, 20 + (idx * 15));
+        });
+    }
+
+    // --- 이벤트 핸들러 ---
+    document.getElementById("sensor-select").onchange = (e) => {
+        if (e.target.value) addSensor(e.target.value);
+    };
+
+    document.getElementById("merge-btn").onclick = () => {
+        const chks = document.querySelectorAll('.merge-chk:checked');
+        if (chks.length === 0) return;
+
+        chks.forEach(chk => {
+            const name = chk.dataset.name;
+            const sensor = activeSensors.find(s => s.name === name);
+            if (sensor) {
+                sensor.isMerged = true;
+                const unit = document.getElementById(`unit-${name}`);
+                if (unit) unit.remove(); // 개별 그래프 삭제
+            }
+        });
+
+        let mArea = document.getElementById("merged-graph-unit");
+        if (!mArea) {
+            mArea = document.createElement("div");
+            mArea.id = "merged-graph-unit";
+            mArea.className = "graph-unit";
+            mArea.style.borderTop = "2px dashed #0f0";
+            mArea.innerHTML = `
+                <div class="graph-header"><span class="graph-title" style="color:#fff">MERGED ANALYSIS</span></div>
+                <canvas id="canvas-merged" style="height:300px;"></canvas>
+            `;
+            document.getElementById("merged-graph-container").appendChild(mArea);
+        }
+        renderPopGraphs();
+    };
+
+    document.getElementById("pause-btn").onclick = () => {
+        isPaused = true;
+        document.getElementById("pause-btn").style.display = "none";
+        document.getElementById("resume-btn").style.display = "inline-block";
+    };
+
+    document.getElementById("resume-btn").onclick = () => {
+        isPaused = false;
+        document.getElementById("resume-btn").style.display = "none";
+        document.getElementById("pause-btn").style.display = "inline-block";
+    };
+
+    document.getElementById("close-modal").onclick = () => {
+        document.getElementById("modal-overlay").style.display = "none";
+        isPaused = false;
+    };
+
+    // --- 원본 보존: 엔진 분석 로직 ---
+    async function startAnalysis(mode) {
+        if (!isConnected || isAnalyzing) return;
+        isAnalyzing = true;
+        const isRPM = mode === 'rpm';
+        const cyl = parseInt(document.getElementById("cyl").value) || 6;
+        
+        if (isRPM) document.getElementById("graph").innerHTML = "";
+        document.getElementById("status").innerText = "ANALYZING...";
+        document.getElementById("progress-container").style.display = "block";
+        document.getElementById("result-text").style.display = "none";
+
+        const duration = isRPM ? 60000 : 30000;
+        const startTime = Date.now();
+        const sensorData = [];
+        const targetPid = isRPM ? "010C" : "010B";
+        const marker = isRPM ? "410C" : "410B";
+
+        while (Date.now() - startTime < duration) {
+            const res = await send(targetPid, 120);
+            const pos = res.indexOf(marker);
+            if (pos !== -1) {
+                let val = isRPM ? Math.round(parseInt(res.substring(pos+4, pos+8), 16) / 4) : parseInt(res.substring(pos+4, pos+6), 16);
+                if (!isNaN(val)) {
+                    sensorData.push(val);
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    const progress = (elapsed / (duration / 1000)) * 100;
+                    document.getElementById("live-value").innerText = `${val} ${isRPM?'RPM':'kPa'}`;
+                    document.getElementById("progress-bar").style.width = `${progress}%`;
+                    document.getElementById("progress-text").innerText = `${elapsed} / ${duration/1000} 초 (샘플: ${sensorData.length})`;
+                }
+            }
+        }
+
+               document.getElementById("progress-bar").style.width = "100%";
+        document.getElementById("status").innerText = "READY";
+        document.getElementById("status").style.color = "#0f0";
+
+        if (isRPM) {
+            const delta = [];
+            for (let i = 1; i < sensorData.length; i++) delta.push(Math.abs(sensorData[i] - sensorData[i-1]));
+            const avgDelta = Array.from({length:cyl}, (_,idx) => {
+                const c = delta.filter((_,i) => i % cyl === idx);
+                return c.length ? c.reduce((a,b)=>a+b,0)/c.length : 0;
+            });
+            const minF = Math.min(...avgDelta.filter(v=>v>0)) || 1;
+            const norm = avgDelta.map(v => Math.max(10, Math.min(100, Math.round((minF/v)*100))));
+            drawGraph(norm);
+
+            const avgScore = Math.round(norm.reduce((a,b)=>a+b,0)/cyl);
+            const minScore = Math.min(...norm);
+            const dev = 100 - minScore;
+            
+            // 2129의 세분화된 등급 판정 로직
+            let grade = dev < 7 ? "최상 (Excellent)" : (dev < 15 ? "양호 (Good)" : "점검 필요 (Check)");
+            let color = dev < 7 ? "#0f0" : (dev < 15 ? "#ff0" : "#f00");
+
+            document.getElementById("result-text").innerHTML = `
+                <div style="font-size:20px; color:${color}; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px;">
+                    ✅ 엔진 균형 분석 완료: <span style="font-weight:bold;">${grade}</span>
+                </div>
+                종합 밸런스 점수: <span style="font-size:24px; color:#0ff;">${avgScore}점</span><br>
+                총 수집 샘플: <strong>${sensorData.length}개</strong><br><br>
+                ${norm.map((v,i)=>`실린더 #${i+1}: <strong>${v}%</strong> ${v>=90?'🟢':(v>=80?'🟡':'🔴')}`).join('<br>')}
+            `;
+        } else {
+            // 2129의 상세 지표 포함 헤드 분석 리포트
+            const mean = sensorData.reduce((a,b)=>a+b,0)/sensorData.length;
+            const std = Math.sqrt(sensorData.map(x=>Math.pow(x-mean,2)).reduce((a,b)=>a+b,0)/sensorData.length);
+            const cv = (std / mean) * 100;
+            const score = Math.max(10, Math.min(100, Math.round(100 - (std * 15))));
+            const maxDev = Math.max(...sensorData) - Math.min(...sensorData);
+            
+            let headStatus = score >= 90 ? "최상" : (score >= 80 ? "양호하나 주의" : "헤드 기밀성 저하 의심");
+            let headColor = score >= 90 ? "#0f0" : (score >= 80 ? "#ff0" : "#f00");
+
+            document.getElementById("result-text").innerHTML = `
+                <div style="font-size:20px; color:${headColor}; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px;">
+                    ✅ 헤드 성능 (엔진 호흡) 분석 완료
+                </div>
+                평균 MAP: <span style="color:#0ff;">${mean.toFixed(1)} kPa</span><br>
+                엔진 호흡 점수: <span style="font-size:28px;">${score}점</span> <span class="badge" style="background:${headColor}; color:#000;">${headStatus}</span><br>
+                <div style="margin-top:15px; padding:10px; background:#111; border-radius:6px; border:1px solid #222;">
+                    <span style="color:#888;">② 상세 지표</span><br>
+                    변동 표준편차: <span style="color:#0f0;">${std.toFixed(2)} kPa</span><br>
+                    변동계수 (CV): <span style="color:#0f0;">${cv.toFixed(2)} %</span><br>
+                    최대 순간 변동 폭: <span style="color:#0f0;">${maxDev.toFixed(1)} kPa</span>
+                </div>
+            `;
+        }
+        document.getElementById("result-text").style.display = "block";
+        isAnalyzing = false;
+    }
+
+    function drawGraph(data) {
+        const g = document.getElementById("graph"); g.innerHTML = "";
+        data.forEach((v,i) => {
+            const c = document.createElement("div"); c.className="bar-container";
+            const b = document.createElement("div"); b.className="bar"; 
+            b.style.height=(v * 2.2)+"px"; b.style.background=v>=90?"#2ecc71":(v>=80?"#f1c40f":"#e74c3c");
+            const l = document.createElement("div"); l.className="bar-label"; 
+            l.innerHTML=`<span class="bar-score">${v}%</span><br>#${i+1}`;
+            c.append(b,l); g.append(c);
+        });
+    }
+
+    document.getElementById("connect").onclick = async () => {
+        try {
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 115200 });
+            writer = port.writable.getWriter(); reader = port.readable.getReader();
+            await send("ATZ", 1000); await send("ATE0"); await send("ATL0"); await send("ATSP0"); await send("ATST0A");
+            isConnected = true;
+            document.getElementById("connect").disabled = true; document.getElementById("analyze").disabled = false;
+            document.getElementById("headAnalyze").disabled = false; document.getElementById("disconnect").disabled = false;
+            initSensorMonitor();
+            monitorTimer = setInterval(updateSensorValues, 1100);
+            document.getElementById("status").innerText = "CONNECTED";
+        } catch (err) { alert("연결 실패"); }
+    };
+
+    document.getElementById("analyze").onclick = () => startAnalysis('rpm');
+    document.getElementById("headAnalyze").onclick = () => startAnalysis('map');
+    document.getElementById("disconnect").onclick = () => location.reload();
+</script>
+</body>
+</html>
