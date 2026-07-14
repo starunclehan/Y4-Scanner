@@ -2,510 +2,800 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>ENGINE PERFORMANCE ANALYZER - Professional Hybrid</title>
+    <title>Y4 MASTER PIECE - ULTIMATE ENGINE v8.9 (Misfire Tracker Integrated)</title>
+    <!-- ==========================================
+         [모듈-100] UI & 디스플레이 엔진 (View & CSS)
+         ========================================== -->
     <style>
-        body { background:#000; color:#0f0; font-family:'Consolas', monospace; text-align:center; margin:0; padding:20px; overflow-x: hidden; }
-        h1 { color:#0f0; letter-spacing:2px; margin-bottom:5px; text-shadow: 0 0 10px rgba(0,255,0,0.5); }
-        .container { max-width:1080px; margin:0 auto; }
+        body { background: #050505; color: #00ffcc; font-family: 'Consolas', monospace; padding: 20px; margin: 0; }
+        .header { border-bottom: 2px solid #00ffcc; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         
-        button { padding:12px 20px; margin:8px; font-size:15px; background:#111; color:#0f0; border:1px solid #0f0; cursor:pointer; border-radius:4px; font-weight:bold; transition: 0.2s; }
-        button:hover { background:#0f0; color:#000; box-shadow: 0 0 10px #0f0; }
-        button:disabled { opacity:0.3; cursor:not-allowed; border-color: #333; color: #333; }
-        
-        #status { font-size:18px; margin:15px 0; color:#ff0; font-weight:bold; height: 24px; }
-        #live-value { font-size:48px; font-weight:bold; color:#0ff; margin:10px 0; text-shadow: 0 0 15px rgba(0,255,255,0.4); }
-        
-        .progress-container { height:26px; background:#111; border:1px solid #0f0; margin:20px 0; position:relative; border-radius:13px; overflow:hidden; display:none; }
-        .progress-bar { height:100%; width:0%; background:linear-gradient(90deg, #050, #0f0); transition: width 0.2s linear; }
-        .progress-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#000; font-weight:900; font-size:14px; z-index: 2; }
-        
-        #graph { display:flex; justify-content:center; align-items:flex-end; height:280px; margin:30px 0; gap:12px; background: rgba(0,255,0,0.02); border-radius: 8px; padding: 10px; }
-        .bar-container { display:flex; flex-direction:column; align-items:center; flex:1; max-width:70px; }
-        .bar { width:100%; background:#0f0; border-radius:4px 4px 0 0; transition:height 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .bar-label { margin-top:8px; font-size:13px; color:#aaa; line-height:1.4; }
-        .bar-score { font-weight:bold; color:#fff; }
-        
-        #result-text { margin-top:25px; padding:25px; background:#050505; border:2px solid #0f0; border-radius:12px; font-size:16px; line-height:1.8; text-align:left; max-width:900px; margin-left:auto; margin-right:auto; box-shadow: 0 0 20px rgba(0,255,0,0.15); display:none; }
-        
-        #sensor-monitor { margin: 25px auto; padding: 18px; background: #080808; border: 1px solid #333; border-radius: 10px; max-width: 1000px; }
-        .sensor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 30px; }
-        .sensor-item { display: flex; justify-content: space-between; font-size: 14px; border-bottom: 1px solid #1a1a1a; padding: 8px 5px; cursor: pointer; transition: background 0.2s; }
-        .sensor-item:hover { background: #111; color: #fff; }
-        .sensor-name { color: #888; }
-        .sensor-value { color: #0ff; font-weight: bold; }
-        
-        #speed-tag { background: #111; border: 1px solid #0f0; padding: 2px 8px; border-radius: 4px; font-size: 13px; color: #0f0; margin-left: 15px; display: inline-block; vertical-align: middle; }
+        /* 차량 메타데이터 입력 패널 스타일 */
+        .meta-panel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: #0c0c0c; border: 1px solid #222; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+        .meta-group { display: flex; flex-direction: column; }
+        .meta-group label { font-size: 0.75rem; color: #888; margin-bottom: 6px; font-weight: bold; }
+        .meta-group input { background: #111; border: 1px solid #00ffcc; color: #fff; padding: 10px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 0.95rem; outline: none; box-shadow: inset 0 0 5px rgba(0,255,204,0.1); }
+        .meta-group input:focus { border-color: #fff; box-shadow: 0 0 10px #00ffcc; }
+        .meta-group input::placeholder { color: #444; }
 
-        /* 그래프 모드(모달) 강화 스타일 */
-        #modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100; justify-content:center; align-items:center; }
-        #modal-content { background:#000; border:2px solid #0f0; padding:20px; border-radius:10px; width:95%; max-width:1000px; max-height: 90vh; overflow-y: auto; position:relative; box-shadow:0 0 30px rgba(0,255,0,0.2); }
-        #close-modal { position:absolute; top:10px; right:15px; color:#f00; font-size:24px; cursor:pointer; font-weight:bold; z-index: 10; }
+        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .card { background: #111; border: 1px solid #333; padding: 12px; border-radius: 4px; border-left: 3px solid #00ffcc; }
+        .label { font-size: 0.7rem; color: #888; text-transform: uppercase; }
+        .value { font-size: 1.4rem; font-weight: bold; color: #fff; margin-top: 5px; }
+        .unit { font-size: 0.8rem; color: #00ffcc; margin-left: 5px; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; align-items: center; }
+        button { background: transparent; border: 1px solid #00ffcc; color: #00ffcc; padding: 12px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+        button:hover:not(:disabled) { background: #00ffcc; color: #000; box-shadow: 0 0 15px #00ffcc; }
+        button:disabled { border-color: #444; color: #444; cursor: not-allowed; }
+        .btn-analysis { border-color: #ff9900; color: #ff9900; }
+        .btn-analysis:hover:not(:disabled) { background: #ff9900; color: #000; box-shadow: 0 0 15px #ff9900; }
+        .btn-osc { border-color: #ff3333; color: #ff3333; }
+        .btn-osc:hover:not(:disabled) { background: #ff3333; color: #000; box-shadow: 0 0 15px #ff3333; }
+        .btn-memory { border-color: #a855f7; color: #a855f7; }
+        .btn-memory:hover:not(:disabled) { background: #a855f7; color: #000; box-shadow: 0 0 15px #a855f7; }
         
-        .modal-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px; border-bottom: 1px solid #222; position: sticky; top: 0; background: #000; z-index: 5; }
-        .graph-unit { position: relative; margin-bottom: 15px; background: #050505; border: 1px solid #333; padding: 10px; border-radius: 8px; }
-        .graph-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .graph-title { font-size: 14px; font-weight: bold; text-transform: uppercase; }
-        canvas { width: 100%; height: 200px; display: block; image-rendering: crisp-edges; }
+        .display-area { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .analysis-box { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 8px; min-height: 460px; display: flex; flex-direction: column; justify-content: flex-start; }
+        .box-title { color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; font-size: 1rem; font-weight: bold; }
+        .stat-line { background: #151515; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 2px solid #555; font-size: 0.85rem; }
+        .env-line { background: #0a1414; padding: 8px; border-radius: 4px; margin-bottom: 12px; border-left: 2px solid #00aa99; font-size: 0.8rem; color: #88ccff; }
+        .highlight { color: #00ffcc; font-weight: bold; }
+        .verdict { margin-top: auto; padding: 15px; border-radius: 5px; font-size: 0.9rem; border: 1px solid #444; line-height: 1.5; }
         
-        .check-area { display: flex; align-items: center; gap: 5px; color: #888; font-size: 12px; }
-        select, .ctrl-btn { background: #111; color: #0f0; border: 1px solid #0f0; padding: 5px 10px; border-radius: 4px; font-family: inherit; font-size: 13px; cursor: pointer; }
-        .ctrl-btn:hover { background: #0f0; color: #000; }
+        .score-card { background: #151515; padding: 12px; border-radius: 4px; margin-top: 10px; margin-bottom: 15px; }
+        .score-label { font-size: 0.65rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        .score-value { font-size: 2rem; font-weight: bold; margin-top: 5px; }
+
+        .dual-bank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+        .single-bank-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 5px; }
+        .bank-panel { background: #111; border: 1px solid #222; padding: 10px; border-radius: 4px; }
+        .bank-title { font-size: 0.8rem; font-weight: bold; padding-bottom: 5px; margin-bottom: 8px; border-bottom: 1px solid #333; text-align: center; }
+
+        /* 온보드 모니터 4열 그리드 및 항목 스타일 */
+        .monitor-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0; }
+        .monitor-item { background: #151515; padding: 10px; border-radius: 4px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>ENGINE PERFORMANCE ANALYZER<br><small style="font-size:0.4em;color:#444;letter-spacing:1px;">HIGH-SPEED DATA ACQUISITION SYSTEM</small></h1>
-        
-        <div style="margin:15px 0; display: flex; justify-content: center; align-items: center;">
-            <label style="font-size:14px;color:#888;">실린더 수 설정: </label>
-            <input type="number" id="cyl" value="6" min="1" max="12" style="width:60px;text-align:center;background:#000;color:#0f0;border:1px solid #0f0;padding:5px;font-size:16px;border-radius:4px; margin-left:10px;">
-            <div id="speed-tag">통신 속도: <span id="data-speed">---</span></div>
-        </div>
 
-        <div style="margin:20px 0;">
-            <button id="connect">OBD-II 연결 (vLinker)</button>
-            <button id="analyze" disabled>엔진 균형 분석 (RPM)</button>
-            <button id="headAnalyze" disabled>헤드 성능 분석 (MAP)</button>
-            <button id="disconnect" disabled>연결 해제</button>
-        </div>
-
-        <div id="status">READY</div>
-        <div id="live-value">---</div>
-
-        <div id="sensor-monitor">
-            <div style="color:#0f0; font-size:13px; margin-bottom:10px; border-bottom:1px solid #222; padding-bottom:5px;">REAL-TIME SENSOR MONITORING (CLICK TO VIEW GRAPH)</div>
-            <div class="sensor-grid" id="sensor-grid"></div>
-        </div>
-
-        <div class="progress-container" id="progress-container">
-            <div class="progress-bar" id="progress-bar"></div>
-            <div class="progress-text" id="progress-text">READY</div>
-        </div>
-        <div id="graph"></div>
-        <div id="result-text"></div>
+    <div class="header">
+        <h1>Y4 DIAGNOSTIC MASTER v8.9 <span id="engine_mode_title" style="color:#fff; font-size:1.1rem; margin-left:15px;"></span></h1>
+        <div id="status" style="color: #ff3333;">진단기 연결 대기 중...</div>
     </div>
 
-    <div id="modal-overlay">
-        <div id="modal-content">
-            <div id="close-modal">&times;</div>
-            <div class="modal-controls">
-                <select id="sensor-select">
-                    <option value="">+ 센서 추가 선택</option>
-                </select>
-                <button id="merge-btn" class="ctrl-btn">합치기</button>
-                <div>
-                    <button id="pause-btn" class="ctrl-btn">정지 (Pause)</button>
-                    <button id="resume-btn" class="ctrl-btn" style="display:none;">재생 (Resume)</button>
-                </div>
-            </div>
-            <div id="graph-list"></div>
-            <div id="merged-graph-container"></div>
+    <!-- 차량 프로필 수동 입력 패널 -->
+    <div class="meta-panel">
+        <div class="meta-group">
+            <label>차량번호</label>
+            <input type="text" id="car_plate" placeholder="예: 51오 6686">
+        </div>
+        <div class="meta-group">
+            <label>차종 및 연식</label>
+            <input type="text" id="car_model" placeholder="예: LF소나타 2016">
+        </div>
+        <div class="meta-group">
+            <label>주행거리 (km)</label>
+            <input type="number" id="car_mileage" placeholder="예: 700000">
+        </div>
+        <div class="meta-group">
+            <label>실린더 수</label>
+            <input type="number" id="car_cylinders" value="4" min="1" max="16" placeholder="예: 4, 6, 8">
         </div>
     </div>
 
-<script>
-    let port = null, reader = null, writer = null;
-    let isConnected = false, isAnalyzing = false, isPaused = false;
-    let lastResponseTime = 0, monitorTimer = null;
-    const encoder = new TextEncoder(), decoder = new TextDecoder();
+    <!-- 대시보드 데이터 모니터 디스플레이 -->
+    <div class="dashboard">
+        <div class="card"><div class="label">ENGINE RPM</div><div class="value" id="d_rpm">0</div><span class="unit">rpm</span></div>
+        <div class="card"><div class="label">MAP PRESSURE</div><div class="value" id="d_map">0.0</div><span class="unit">kPa</span></div>
+        <div class="card" id="card_b1"><div class="label" id="lbl_b1">O2 S1 / O2 S2 (AFR)</div><div class="value"><span id="d_b1s1">0.00</span>V / <span id="d_b1s2">0.00</span>V</div></div>
+        <div class="card" id="card_b2" style="display:none;"><div class="label">B2S1 / B2S2 (O2)</div><div class="value"><span id="d_b2s1">0.00</span>V / <span id="d_b2s2">0.00</span>V</div></div>
+        <div class="card"><div class="label">COOLANT (ECT)</div><div class="value" id="d_ect">0</div><span class="unit">°C</span></div>
+        <div class="card"><div class="label">IAT / BATT</div><div class="value"><span id="d_iat">0</span>°C / <span id="d_bat">0.0</span>V</div></div>
+        <div class="card"><div class="label">TPS %</div><div class="value" id="d_tps">0</div><span class="unit">%</span></div>
+        <div class="card"><div class="label">LOAD %</div><div class="value" id="d_load">0</div><span class="unit">%</span></div>
+    </div>
 
-    // 그래프 관리 변수
-    let activeSensors = []; // [{name, color, isMerged}]
-    let historyData = {};
-    const MAX_HISTORY = 50;
-    const warmColors = ["#ff4757", "#ffa502"]; 
-    const coolColors = ["#2e86de", "#1dd1a1"];
-
-    const sensors = [
-        {pid: "010C", name: "rpm", unit: "rpm", byte_len: 4},
-        {pid: "010B", name: "map", unit: "kPa", byte_len: 2},
-        {pid: "0105", name: "ect", unit: "°C", byte_len: 2},
-        {pid: "0104", name: "Load_PCT", unit: "%", byte_len: 2},
-        {pid: "0107", name: "LTFT1", unit: "%", byte_len: 2},
-        {pid: "0109", name: "LTFT2", unit: "%", byte_len: 2},
-        {pid: "0114", name: "o2s11", unit: "V", byte_len: 4},
-        {pid: "0115", name: "o2s12", unit: "V", byte_len: 4},
-        {pid: "0118", name: "o2s21", unit: "V", byte_len: 4},
-        {pid: "0119", name: "o2s22", unit: "V", byte_len: 4},
-        {pid: "0142", name: "VPWR", unit: "V", byte_len: 4},
-        {pid: "0124", name: "Lambda", unit: "", byte_len: 4}
-    ];
-
-    async function send(cmd, timeoutMs = 600) {
-        if (!writer) return "";
-        const start = Date.now();
-        try {
-            await writer.write(encoder.encode(cmd + "\r"));
-            let response = "";
-            while (Date.now() - start < timeoutMs) {
-                const result = await Promise.race([
-                    reader.read(),
-                    new Promise(r => setTimeout(() => r({done:true, value:null}), timeoutMs))
-                ]);
-                if (result && result.value) response += decoder.decode(result.value);
-                if (response.includes(">")) break;
-            }
-            lastResponseTime = Date.now() - start;
-            return response.replace(/[\s\r\n]/g, "").toUpperCase();
-        } catch (e) { return ""; }
-    }
-
-    function initSensorMonitor() {
-        const grid = document.getElementById("sensor-grid");
-        const select = document.getElementById("sensor-select");
-        grid.innerHTML = "";
-        select.innerHTML = '<option value="">+ 센서 추가 선택</option>';
+    <!-- 제어 컨트롤러 -->
+    <div class="controls">
+        <button id="btnConnect">🔌 진단기(Serial) 연결</button>
+        <button id="btnRpmAnalysis" class="btn-analysis" disabled>📊 엔진 밸런스 분석 (60s)</button>
+        <button id="btnMapAnalysis" class="btn-analysis" disabled>⚖️ 헤드 기밀성 분석 (30s)</button>
+        <button id="btnOsc" class="btn-osc" disabled><span id="btn_osc_text">🌡️ 촉매 OSC 분석</span></button>
+        <button id="btnObdMonitor" class="btn-analysis" style="border-color: #00ffcc; color: #00ffcc;" disabled>📋  On-Board 모니터 스캔</button>
         
-        sensors.forEach(s => {
-            historyData[s.name] = [];
-            const div = document.createElement("div");
-            div.className = "sensor-item";
-            div.onclick = () => openGraphMode(s.name);
-            div.innerHTML = `<span class="sensor-name">${s.name}</span><span class="sensor-value" id="val-${s.name}">---</span>`;
-            grid.appendChild(div);
-            
-            const opt = document.createElement("option");
-            opt.value = s.name; opt.innerText = s.name.toUpperCase();
-            select.appendChild(opt);
-        });
-    }
+        <span style="color: #444; margin: 0 10px;">|</span>
+        
+        <button id="btnSaveMemory" class="btn-memory" disabled>💾 분석 결과 저장 (JSON)</button>
+        <button id="btnLoadMemory" class="btn-memory">📂 결과 불러오기</button>
+        <input type="file" id="fileChooser" accept=".json" style="display: none;">
+    </div>
 
-    async function updateSensorValues() {
-        if (!isConnected || isAnalyzing) return;
-        for (let s of sensors) {
-            const res = await send(s.pid, 180);
-            const marker = "41" + s.pid.substring(2);
-            const pos = res.indexOf(marker);
-            if (pos !== -1) {
-                const hex = res.substring(pos + 4, pos + 4 + s.byte_len);
-                if (hex.length < s.byte_len) continue;
-                let num = parseInt(hex, 16);
-                let value = null;
-                if (!isNaN(num)) {
-                    if (s.name === "rpm") value = Math.round(num / 4);
-                    else if (s.name === "map") value = num;
-                    else if (s.name === "ect") value = num - 40;
-                    else if (s.name === "Load_PCT") value = parseFloat((num / 2.55).toFixed(1));
-                    else if (s.name.includes("LTFT")) value = parseFloat((num / 1.28 - 100).toFixed(1));
-                    else if (s.name.startsWith("o2s")) value = parseFloat((parseInt(hex.substring(0, 2), 16) / 200).toFixed(2));
-                    else if (s.name === "VPWR") value = parseFloat((num / 1000).toFixed(1));
-                    else if (s.name === "Lambda") {
-                        let a = parseInt(hex.substring(0, 2), 16), b = parseInt(hex.substring(2, 4), 16);
-                        value = parseFloat(((a * 256 + b) / 32768).toFixed(3));
+    <!-- 상단 3분할 리포트 패널 -->
+    <div class="display-area">
+        <div class="analysis-box" id="report_rpm">
+            <div class="box-title">📊 [슬롯-1] 엔진 밸런스 정밀 분석</div>
+            <p style="color:#555; margin: 0;">연결 후 RPM 정밀 샘플링을 시작하세요.</p>
+        </div>
+        <div class="analysis-box" id="report_map">
+            <div class="box-title">⚖️ [슬롯-2] 헤드 기밀성 정밀 분석</div>
+            <p style="color:#555; margin: 0;">연결 후 MAP 정밀 샘플링을 시작하세요.</p>
+        </div>
+        <div class="analysis-box" id="report_osc">
+            <div class="box-title" id="osc_box_title">🌡️ [슬롯-3] 배기 촉매 OSC 진단 결과</div>
+            <p style="color:#555; margin: 0;">연료 차단 테스트 대기 중...</p>
+        </div>
+    </div>
+
+    <!-- [하단 배치] 온보드 시스템 결과 화면 와이드 패널 -->
+    <div class="analysis-box" id="report_obd_monitor" style="margin-top: 20px; min-height: auto;">
+        <div class="box-title">📋 [슬롯-4] On-Board 자가진단 시스템 모니터 상태</div>
+        <p style="color:#555; margin: 0;">진단기 연결 후 모니터 스캔을 시작하세요.</p>
+    </div>
+
+    <script>
+        let port, writer, reader;
+        let isCollecting = false;
+        let isV6Engine = false;
+        
+        let currentData = { rpm: [], map: [], b1s1: [], b1s2: [], b2s1: [], b2s2: [], b1t1: [], b1t2: [], b2t1: [], b2t2: [] };
+        
+        let memoryBank = {
+            carInfo: { plate: "", model: "", mileage: "", cylinders: "4" },
+            engineMode: "UNKNOWN",
+            rpm: { raw: [], timestamp: "", ect: "", html: "" },
+            map: { raw: [], timestamp: "", ect: "", html: "" },
+            osc: { b1s1: [], b1s2: [], b2s1: [], b2s2: [], b1t1: [], b1t2: [], b2t1: [], b2t2: [], timestamp: "", ect: "", html: "" },
+            obdMonitor: { html: "", timestamp: "", ect: "" }
+        };
+
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+
+        function safeParse(res, pid, offset, length) {
+            if (!res) return null;
+            const cleanRes = res.replace(/[\s\r\n]/g, "").toUpperCase();
+            const cleanPID = pid.replace("01", "41").toUpperCase();
+            const idx = cleanRes.indexOf(cleanPID);
+            if (idx !== -1 && cleanRes.length >= idx + offset + length) {
+                return cleanRes.substring(idx + offset, idx + offset + length);
+            }
+            return null;
+        }
+
+        async function send(cmd, timeoutMs = 600) {
+            if (!writer || !reader) return "";
+            try {
+                await writer.write(encoder.encode(cmd + "\r"));
+                let response = "";
+                const start = Date.now();
+                while (Date.now() - start < timeoutMs) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    if (value) response += decoder.decode(value);
+                    if (response.includes(">")) break;
+                }
+                return response;
+            } catch (e) { return ""; }
+        }
+
+        const setButtonsDisabled = (state) => {
+            document.querySelectorAll('.btn-analysis, .btn-osc, #btnObdMonitor').forEach(b => b.disabled = state);
+        };
+
+        const updateBackupButtonState = () => {
+            if (memoryBank.rpm.raw.length > 0 || memoryBank.map.raw.length > 0 || memoryBank.osc.b1s1.length > 0 || memoryBank.obdMonitor.html.length > 0) {
+                document.getElementById('btnSaveMemory').disabled = false;
+            }
+        };
+
+        function getNowString() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ` +
+                   `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+        }
+
+        function switchEngineViewMode(cylCount) {
+            const count = parseInt(cylCount) || 4;
+            isV6Engine = (count >= 6);
+            
+            document.getElementById('car_cylinders').value = count;
+
+            if (isV6Engine) {
+                document.getElementById('engine_mode_title').innerText = `(${count}기통 Multi-Bank Mode)`;
+                document.getElementById('btn_osc_text').innerText = `🌡️ ${count}기통 듀얼 촉매 OSC 분석`;
+                document.getElementById('osc_box_title').innerText = `🌡️ [슬롯-3] 배기 촉매 OSC 진단 결과 (${count}기통 듀얼)`;
+                document.getElementById('card_b2').style.display = "block";
+                document.getElementById('lbl_b1').innerText = "B1S1 / B1S2 (O2)";
+                memoryBank.engineMode = "MULTI_BANK";
+            } else {
+                document.getElementById('engine_mode_title').innerText = `(${count}기통 Single-Bank Mode)`;
+                document.getElementById('btn_osc_text').innerText = `🌡️ 촉매 OSC 분석 (싱글)`;
+                document.getElementById('osc_box_title').innerText = "🌡️ [슬롯-3] 배기 촉매 OSC 진단 결과 (싱글)";
+                document.getElementById('card_b2').style.display = "none";
+                document.getElementById('lbl_b1').innerText = "O2 S1 / O2 S2 (AFR)";
+                memoryBank.engineMode = "SINGLE_BANK";
+            }
+        }
+
+        document.getElementById('car_cylinders').oninput = (e) => {
+            switchEngineViewMode(e.target.value);
+        };
+
+        async function detectEngineType() {
+            document.getElementById('status').innerText = "⚙️ 엔진 실린더 뱅크 스캔 중...";
+            const checkRes = await send("0118", 500); 
+            const parsedHex = safeParse(checkRes, "0118", 4, 2);
+
+            if (parsedHex && !checkRes.includes("NODATA") && !checkRes.includes("?")) {
+                switchEngineViewMode(6);
+            } else {
+                switchEngineViewMode(4);
+            }
+            
+            document.getElementById('status').innerText = "✅ 진단기 준비 완료";
+            document.getElementById('status').style.color = "#00ffcc";
+            setButtonsDisabled(false);
+        }
+
+        async function dashboardLoop() {
+            if (!isCollecting && writer) {
+                await updateDashboard();
+            }
+            setTimeout(dashboardLoop, isV6Engine ? 1200 : 1000); 
+        }
+
+        async function updateDashboard() {
+            const pids = [
+                { id: "010C", dom: "d_rpm",  off: 4, len: 4, div: 4 },
+                { id: "010B", dom: "d_map",  off: 4, len: 2, div: 1 },
+                { id: "0114", dom: "d_b1s1", off: 4, len: 2, div: 200, fix: 2 },
+                { id: "0115", dom: "d_b1s2", off: 4, len: 2, div: 200, fix: 2 },
+                { id: "0105", dom: "d_ect",  off: 4, len: 2, div: 1, sub: 40 },
+                { id: "010F", dom: "d_iat",  off: 4, len: 2, div: 1, sub: 40 },
+                { id: "0111", dom: "d_tps",  off: 4, len: 2, div: 2.55 },
+                { id: "0104", dom: "d_load", off: 4, len: 2, div: 2.55 }
+            ];
+
+            if (isV6Engine) {
+                pids.push({ id: "0118", dom: "d_b2s1", off: 4, len: 2, div: 200, fix: 2 });
+                pids.push({ id: "0119", dom: "d_b2s2", off: 4, len: 2, div: 200, fix: 2 });
+            }
+
+            for (let p of pids) {
+                const res = await send(p.id);
+                const hex = safeParse(res, p.id, p.off, p.len);
+                if (hex) {
+                    let val = parseInt(hex, 16) / (p.div || 1);
+                    if (p.sub) val -= p.sub;
+                    document.getElementById(p.dom).innerText = p.fix ? val.toFixed(p.fix) : Math.floor(val);
+                }
+            }
+            const rV = await send("ATRV");
+            const m = rV.match(/(\d+\.\d+)V/);
+            if (m) document.getElementById('d_bat').innerText = m[1];
+        }
+
+        const runAnalysis = async (type) => {
+            if (isCollecting) return;
+            isCollecting = true;
+            setButtonsDisabled(true);
+            
+            currentData = { rpm: [], map: [], b1s1: [], b1s2: [], b2s1: [], b2s2: [], b1t1: [], b1t2: [], b2t1: [], b2t2: [] };
+            
+            let timer = type === 'MAP' ? 30 : 60;
+            const totalDuration = timer * 1000;
+            
+            const targetDomId = type === 'RPM' ? 'report_rpm' : 'report_map';
+            const reportDisplay = document.getElementById(targetDomId);
+            const pid = type === 'RPM' ? "010C" : "010B";
+
+            const targetEct = document.getElementById('d_ect').innerText + " °C";
+            const targetTime = getNowString();
+
+            const timerInt = setInterval(() => {
+                timer--;
+                reportDisplay.innerHTML = `
+                    <div class="box-title">🎯 ${type} 데이터 집중 수집 중... (${timer}s)</div>
+                    <div class="stat-line" style="border-left-color:#ff9900">상태: 대시보드 동결 (통신 대역폭 100% 선점)</div>
+                `;
+                if (timer <= 0) clearInterval(timerInt);
+            }, 1000);
+
+            const startTime = Date.now();
+            while (Date.now() - startTime < totalDuration) {
+                const res = await send(pid, 200);
+                const hex = safeParse(res, pid, 4, type === 'RPM' ? 4 : 2);
+                if (hex) {
+                    let val = parseInt(hex, 16) / (type === 'RPM' ? 4 : 1);
+                    if (type === 'RPM') currentData.rpm.push(val);
+                    else currentData.map.push(val);
+                }
+                await new Promise(r => setTimeout(r, 2));
+            }
+            
+            isCollecting = false;
+            setButtonsDisabled(false);
+            showResult(type, targetTime, targetEct); 
+        };
+
+        const startOscTestPro = async () => {
+            if (isCollecting) return;
+            isCollecting = true;
+            setButtonsDisabled(true);
+            currentData = { rpm: [], map: [], b1s1: [], b1s2: [], b2s1: [], b2s2: [], b1t1: [], b1t2: [], b2t1: [], b2t2: [] };
+            
+            const reportDisplay = document.getElementById('report_osc');
+            let timer = isV6Engine ? 20 : 15;
+
+            const targetEct = document.getElementById('d_ect').innerText + " °C";
+            const targetTime = getNowString();
+
+            const timerInt = setInterval(() => {
+                timer--;
+                reportDisplay.innerHTML = `
+                    <div class="box-title">🌡️ 촉매 데이터 탐색 중... (${timer}s)</div>
+                    <div class="stat-line" style="border-left-color:#ff3333">상태: ${isV6Engine ? 'Multi-Bank 고속 샘플링' : '싱글 뱅크 초고속 집중 샘플링'}</div>
+                `;
+                if (timer <= 0) clearInterval(timerInt);
+            }, 1000);
+
+            const startTime = Date.now();
+            const scanDuration = isV6Engine ? 20000 : 15000;
+
+            while (Date.now() - startTime < scanDuration) {
+                const rB1S1 = await send("0114", 120);
+                const h11 = safeParse(rB1S1, "0114", 4, 2);
+                if (h11) { currentData.b1s1.push(parseInt(h11, 16) / 200); currentData.b1t1.push(Date.now()); }
+
+                const rB1S2 = await send("0115", 120);
+                const h12 = safeParse(rB1S2, "0115", 4, 2);
+                if (h12) { currentData.b1s2.push(parseInt(h12, 16) / 200); currentData.b1t2.push(Date.now()); }
+
+                if (isV6Engine) {
+                    const rB2S1 = await send("0118", 120);
+                    const h21 = safeParse(rB2S1, "0118", 4, 2);
+                    if (h21) { currentData.b2s1.push(parseInt(h21, 16) / 200); currentData.b2t1.push(Date.now()); }
+
+                    const rB2S2 = await send("0119", 120);
+                    const h22 = safeParse(rB2S2, "0119", 4, 2);
+                    if (h22) { currentData.b2s2.push(parseInt(h22, 16) / 200); currentData.b2t2.push(Date.now()); }
+                }
+                await new Promise(r => setTimeout(r, 2));
+            }
+            isCollecting = false;
+            setButtonsDisabled(false);
+            processDynamicOscResult(targetTime, targetEct); 
+        };
+
+        function processDynamicOscResult(timeMark, ectMark) {
+            const reportDisplay = document.getElementById('report_osc');
+            const cylNum = document.getElementById('car_cylinders').value;
+            
+            const b1S1Idx = currentData.b1s1.findIndex(v => v < 0.15);
+            const b1S2Idx = currentData.b1s2.findIndex(v => v < 0.2);
+            let b1Diff = b1S1Idx > -1 && b1S2Idx > -1 ? currentData.b1t2[b1S2Idx] - currentData.b1t1[b1S1Idx] : null;
+
+            const calcBankScore = (diff) => {
+                if (!diff || diff <= 0) return 0;
+                if (diff >= 1000) return 100;
+                if (diff >= 500) return 80 + ((diff - 500) / 500) * 20;
+                return (diff / 500) * 80;
+            };
+
+            let htmlContent = "";
+
+            if (!isV6Engine) {
+                if (b1Diff === null) {
+                    reportDisplay.innerHTML = `
+                        <div class="box-title">❌ 분석 실패</div>
+                        <div class="stat-line" style="border-left-color: #ff3333">오류: 연료 차단 조건 미달</div>
+                        <button onclick="document.getElementById('btnOsc').click()" style="margin-top:auto;">🔄 재시도</button>
+                    `;
+                    return;
+                }
+                let b1Score = calcBankScore(b1Diff);
+                let b1Color = b1Diff > 500 ? "#00ffcc" : "#ff3333";
+
+                htmlContent = `
+                    <div class="box-title">🌡️ 촉매 OSC 분석 결과 (${cylNum}기통 싱글)</div>
+                    <div class="env-line">⏰ 측정시각: ${timeMark} | 🌡️ ECT: ${ectMark}</div>
+                    <div class="single-bank-grid">
+                        <div class="bank-panel" style="border-top: 3px solid ${b1Color}">
+                            <div class="bank-title" style="color:${b1Color}">CATALYST SYSTEM</div>
+                            <div style="font-size:0.75rem; color:#888;">지연 시간 (T1-T2):</div>
+                            <div style="font-size:1.3rem; font-weight:bold; color:#fff">${b1Diff} ms</div>
+                            <div style="font-size:0.65rem; color:#aaa; margin-top:10px;">CAT SCORE:</div>
+                            <div style="font-size:1.8rem; font-weight:bold; color:${b1Color}">${b1Score.toFixed(1)}점</div>
+                        </div>
+                    </div>
+                    <div class="verdict" style="margin-top:15px; border-color:${b1Score >= 80 ? '#00ffcc' : '#ff3333'}; color:${b1Score >= 80 ? '#00ffcc' : '#ff3333'}">
+                        ${b1Score >= 80 ? '✅ 촉매 산소 저장 능력 및 정화성능 양호' : '❌ 촉매 정화능력 저하 정밀 진단: 배기가스 누설 및 촉매 열화 점검'}
+                    </div>
+                    <button onclick="document.getElementById('btnOsc').click()" style="margin-top:10px">🔄 다시 테스트</button>
+                `;
+            } else {
+                const b2S1Idx = currentData.b2s1.findIndex(v => v < 0.15);
+                const b2S2Idx = currentData.b2s2.findIndex(v => v < 0.2);
+                let b2Diff = b2S1Idx > -1 && b2S2Idx > -1 ? currentData.b2t2[b2S2Idx] - currentData.b2t1[b2S1Idx] : null;
+
+                if (b1Diff === null && b2Diff === null) {
+                    reportDisplay.innerHTML = `
+                        <div class="box-title">❌ ${cylNum}기통 멀티 분석 실패</div>
+                        <div class="stat-line" style="border-left-color: #ff3333">오류: 연료 차단 조건 미달</div>
+                        <button onclick="document.getElementById('btnOsc').click()" style="margin-top:auto;">🔄 재시도</button>
+                    `;
+                    return;
+                }
+
+                let b1Score = calcBankScore(b1Diff);
+                let b2Score = calcBankScore(b2Diff);
+                let b1Color = b1Diff && b1Diff > 500 ? "#00ffcc" : "#ff3333";
+                let b2Color = b2Diff && b2Diff > 500 ? "#00ffcc" : "#ff3333";
+
+                htmlContent = `
+                    <div class="box-title">🌡️ 촉매 OSC 진단 결과 (${cylNum}기통 듀얼)</div>
+                    <div class="env-line">⏰ 측정시각: ${timeMark} | 🌡️ ECT: ${ectMark}</div>
+                    <div class="dual-bank-grid">
+                        <div class="bank-panel" style="border-top: 3px solid ${b1Color}">
+                            <div class="bank-title" style="color:${b1Color}">BANK 1 측</div>
+                            <div style="font-size:0.75rem; color:#888;">지연 시간:</div>
+                            <div style="font-size:1.1rem; font-weight:bold; color:#fff">${b1Diff ? b1Diff + ' ms' : '감지 실패'}</div>
+                            <div style="font-size:0.65rem; color:#aaa; margin-top:10px;">CAT SCORE:</div>
+                            <div style="font-size:1.4rem; font-weight:bold; color:${b1Color}">${b1Score.toFixed(1)}점</div>
+                        </div>
+                        <div class="bank-panel" style="border-top: 3px solid ${b2Color}">
+                            <div class="bank-title" style="color:${b2Color}">BANK 2 측</div>
+                            <div style="font-size:0.75rem; color:#888;">지연 시간:</div>
+                            <div style="font-size:1.1rem; font-weight:bold; color:#fff">${b2Diff ? b2Diff + ' ms' : '감지 실패'}</div>
+                            <div style="font-size:0.65rem; color:#aaa; margin-top:10px;">CAT SCORE:</div>
+                            <div style="font-size:1.4rem; font-weight:bold; color:${b2Color}">${b2Score.toFixed(1)}점</div>
+                        </div>
+                    </div>
+                    <div class="verdict" style="margin-top:15px; border-color:${(b1Score >= 80 && b2Score >= 80) ? '#00ffcc' : '#ff3333'}; color:${(b1Score >= 80 && b2Score >= 80) ? '#00ffcc' : '#ff3333'}">
+                        ${(b1Score >= 80 && b2Score >= 80) ? '✅ 좌우 뱅크 촉매 정화 상태 균일 및 양호' : '❌ 특정 뱅크 촉매 효율 저하 분리 감지: 배기 가스 누설 및 열화 확인 요망'}
+                    </div>
+                    <button onclick="document.getElementById('btnOsc').click()" style="margin-top:10px">🔄 다시 테스트</button>
+                `;
+                
+                memoryBank.osc.b2s1 = [...currentData.b2s1]; memoryBank.osc.b2s2 = [...currentData.b2s2];
+                memoryBank.osc.b2t1 = [...currentData.b2t1]; memoryBank.osc.b2t2 = [...currentData.b2t2];
+            }
+            
+            memoryBank.osc.b1s1 = [...currentData.b1s1]; memoryBank.osc.b1s2 = [...currentData.b1s2];
+            memoryBank.osc.b1t1 = [...currentData.b1t1]; memoryBank.osc.b1t2 = [...currentData.b1t2];
+            memoryBank.osc.timestamp = timeMark;
+            memoryBank.osc.ect = ectMark;
+            memoryBank.osc.html = htmlContent;
+            reportDisplay.innerHTML = htmlContent;
+            updateBackupButtonState();
+        }
+
+        const getStats = (arr) => {
+            const n = arr.length;
+            if (n === 0) return null;
+            const avg = arr.reduce((a, b) => a + b) / n;
+            const stdDev = Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / n);
+            return { avg, stdDev };
+        };
+
+        const showResult = (type, timeMark, ectMark) => {
+            const data = type === 'RPM' ? currentData.rpm : currentData.map;
+            const s = getStats(data);
+            if (!s) return;
+            
+            const rui = (s.stdDev / s.avg) * 100;
+            let score = 0;
+            let scoreColor = "#ff3333";
+            let htmlContent = "";
+
+            if (type === 'RPM') {
+                if (rui <= 1.00) score = 100 - (rui * 10);
+                else if (rui <= 1.50) score = 89 - ((rui - 1.01) * 18);
+                else if (rui <= 2.50) score = 79 - ((rui - 1.51) * 9);
+                else score = 69 - ((rui - 2.51) * 10);
+                if (score < 0) score = 0;
+                if (score >= 90) scoreColor = "#00ffcc";
+                else if (score >= 80) scoreColor = "#ff9900";
+
+                htmlContent = `
+                    <div class="box-title">📊 엔진 밸런스 정밀 분석 결과</div>
+                    <div class="env-line">⏰ 측정시각: ${timeMark} | 🌡️ ECT: ${ectMark}</div>
+                    <div class="stat-line">수집 표본: <span class="highlight">${data.length}개</span></div>
+                    <div class="stat-line">평균 RPM: <span class="highlight">${s.avg.toFixed(1)} rpm</span></div>
+                    <div class="stat-line">엔진 균형 지수: <span class="highlight">${rui.toFixed(3)}%</span></div>
+                    <div class="score-card" style="border-left: 4px solid ${scoreColor};">
+                        <div class="score-label">ENGINE BALANCE SCORE</div>
+                        <div class="score-value" style="color: ${scoreColor};">${score.toFixed(2)}<span style="font-size:0.9rem; color:#fff; margin-left:5px;">점 / 100점</span></div>
+                    </div>
+                    <div class="verdict" style="border-color:${rui < 1.0 ? '#00ffcc' : '#ff3333'}; color:${rui < 1.0 ? '#00ffcc' : '#ff3333'}">
+                        ${rui < 1.0 ? '✅ 기계적 회전 균형 상태 양호' : '❌ 엔진 회전 편차 과다: 실화 및 압축 압력 점검 요망'}
+                    </div>
+                `;
+                memoryBank.rpm.raw = [...data]; 
+                memoryBank.rpm.timestamp = timeMark;
+                memoryBank.rpm.ect = ectMark;
+                memoryBank.rpm.html = htmlContent;
+                document.getElementById('report_rpm').innerHTML = htmlContent;
+            } else {
+                if (rui <= 2.00) score = 100 - (rui * 5);
+                else if (rui <= 3.00) score = 90 - ((rui - 2.01) * 10);
+                else if (rui <= 4.50) score = 80 - ((rui - 3.01) * 20);
+                else score = 50 - ((rui - 4.51) * 10);
+                if (score < 0) score = 0;
+                if (score >= 90) scoreColor = "#00ffcc";
+                else if (score >= 80) scoreColor = "#ff9900";
+
+                htmlContent = `
+                    <div class="box-title">⚖️ 헤드 기밀성 분석 결과</div>
+                    <div class="env-line">⏰ 측정시각: ${timeMark} | 🌡️ ECT: ${ectMark}</div>
+                    <div class="stat-line">수집 표본: <span class="highlight">${data.length}개 (30초 단축 수집)</span></div>
+                    <div class="stat-line">평균 압력: <span class="highlight">${s.avg.toFixed(2)} kPa</span></div>
+                    <div class="stat-line">헤드 기밀성 지수: <span class="highlight">${rui.toFixed(3)}%</span></div>
+                    <div class="score-card" style="border-left: 4px solid ${scoreColor};">
+                        <div class="score-label">MAP LEAKAGE SCORE</div>
+                        <div class="score-value" style="color: ${scoreColor};">${score.toFixed(2)}<span style="font-size:0.9rem; color:#fff; margin-left:5px;">점 / 100점</span></div>
+                    </div>
+                    <div class="verdict" style="border-color:${rui < 3.0 ? '#00ffcc' : '#ff3333'}; color:${rui < 3.0 ? '#00ffcc' : '#ff3333'}">
+                        ${rui < 3.0 ? '✅ 흡기 기밀성 상태 양호' : '❌ 진공 누설 편차 과다: 가스켓 및 라인 점검 요망'}
+                    </div>
+                `;
+                memoryBank.map.raw = [...data]; 
+                memoryBank.map.timestamp = timeMark;
+                memoryBank.map.ect = ectMark;
+                memoryBank.map.html = htmlContent;
+                document.getElementById('report_map').innerHTML = htmlContent;
+            }
+            updateBackupButtonState();
+        };
+
+        // [핵심 모듈] On-Board 자가진단 및 실린더별 미세 실화 실시간 스캔 매핑 엔진
+        async function runObdMonitorAnalysis() {
+            if (isCollecting) return;
+            isCollecting = true;
+            setButtonsDisabled(true);
+
+            const reportDisplay = document.getElementById('report_obd_monitor');
+            reportDisplay.innerHTML = `
+                <div class="box-title">📋 자가진단 시스템 및 실린더별 미세 실화 스캔 중...</div>
+                <div class="stat-line" style="border-left-color:#00ffcc">상태: ECU 모니터 레지스터 및 실린더 실화 카운터 추적 중...</div>
+            `;
+
+            const targetEct = document.getElementById('d_ect').innerText + " °C";
+            const targetTime = getNowString();
+            const cylCount = parseInt(document.getElementById('car_cylinders').value) || 4;
+
+            // 1. Mode 01 PID 01 모니터링 요약 상태 조회
+            const res01 = await send("0101", 400);
+            const hex01 = safeParse(res01, "0101", 4, 8);
+
+            if (!hex01) {
+                reportDisplay.innerHTML = `
+                    <div class="box-title">❌ 스캔 실패</div>
+                    <div class="stat-line" style="border-left-color: #ff3333">오류: ECU 응답 없음 또는 시간 초과</div>
+                `;
+                isCollecting = false;
+                setButtonsDisabled(false);
+                return;
+            }
+
+            const b1 = parseInt(hex01.substring(0, 2), 16); 
+            const b2 = parseInt(hex01.substring(2, 4), 16); 
+            const b4 = parseInt(hex01.substring(6, 8), 16); 
+
+            const isMilOn = (b1 & 0x80) !== 0;
+            const dtcCount = b1 & 0x7F;
+
+// 2. [정밀 추적] 실린더별 누적 실화 수치 개별 질의 (Mode 06 표준 연동 인터페이스)
+            let misfireDetails = [];
+            let totalMisfiresFound = 0;
+
+            for (let i = 1; i <= cylCount; i++) {
+                const mode06Pid = "06A" + i; // 각 실린더별 ID 매핑 (06A1=1번, 06A2=2번...)
+                const res06 = await send(mode06Pid, 150);
+                
+                let count = 0;
+                if (res06 && !res06.includes("NODATA") && !res06.includes("?")) {
+                    // 공백 및 응답 종료 기호(>) 완벽 제거
+                    const hex06 = res06.replace(/[\s\r\n>]/g, "").toUpperCase();
+                    
+                    // 올바른 Mode 06 응답 헤더인 "46A" + i (예: 46A1, 46A2) 위치 정밀 추적
+                    const targetHeader = "46A" + i;
+                    const headerIdx = hex06.indexOf(targetHeader);
+                    
+                    if (headerIdx !== -1) {
+                        // 헤더 뒤에 오는 데이터 바이트 길이 안전성 검사 후 파싱
+                        if (hex06.length >= headerIdx + 12) {
+                            const valHex = hex06.substring(headerIdx + 8, headerIdx + 12);
+                            const parsedVal = parseInt(valHex, 16);
+                            
+                            // 숫자가 정상적으로 파싱되었고 유령 데이터(FFFF 등)가 아닐 때만 기록
+                            if (!isNaN(parsedVal) && parsedVal < 0xFFF0) {
+                                count = parsedVal;
+                            }
+                        }
+                    }
+                    
+                    if (headerIdx !== -1) {
+                        // 헤더(4바이트) + 테스트ID/컴포넌트ID(4바이트) 뒤에 오는 실제 측정값 4바이트 파싱
+                        const valHex = hex06.substring(headerIdx + 8, headerIdx + 12);
+                        const parsedVal = parseInt(valHex, 16) || 0;
+                        
+                        // 가져온 값이 데이터 한계값(FFFF, FFF0 등 유령 데이터)인 경우는 카운트에서 제외
+                        if (parsedVal < 0xFFF0) {
+                            count = parsedVal;
+                        }
                     }
                 }
-                if (value !== null) {
-                    const el = document.getElementById(`val-${s.name}`);
-                    if (el) el.innerText = value + (s.unit ? " " + s.unit : "");
-                    if (!isPaused) {
-                        historyData[s.name].push(value);
-                        if (historyData[s.name].length > MAX_HISTORY) historyData[s.name].shift();
+
+                // 0건 이상의 미세 실화가 실제 검출된 실린더의 번호와 개수를 개별적으로 포착하여 기록
+                if (count > 0) {
+                    misfireDetails.push(`<span style="color:#ff3333; font-weight:bold;">#${i}번 실린더: ${count}개</span>`);
+                    totalMisfiresFound += count;
+                }
+            }           
+
+            // 실화 모니터 텍스트 매핑 최적화
+            const misfireStatusText = totalMisfiresFound > 0 ? `PASS (미세감지: ${totalMisfiresFound}건)` : "PASS";
+            
+            const monitorItems = [
+                { name: "실화 (Misfire = 失火)", status: (b2 & 0x40) === 0 ? misfireStatusText : "FAIL" },
+                { name: "연료 시스템 (Fuel)", status: (b2 & 0x20) === 0 ? "PASS" : "FAIL" },
+                { name: "촉매 (Catalyst)", status: (b4 & 0x01) === 0 ? "PASS" : "FAIL" },
+                { name: "EVAP 증발가스", status: (b4 & 0x04) === 0 ? "PASS" : "FAIL" },
+                { name: "산소센서 (O2 Sensor)", status: (b4 & 0x20) === 0 ? "PASS" : "FAIL" },
+                { name: "산소센서 히터", status: (b4 & 0x40) === 0 ? "PASS" : "FAIL" },
+                { name: "가변밸브/EGR", status: (b4 & 0x80) === 0 ? "PASS" : "FAIL" }
+            ];
+
+            const hasFail = monitorItems.some(item => item.status === "FAIL") || isMilOn;
+            // 미세 실화가 존재할 시 주의 환기를 위해 오렌지 칼라로 변형 스위칭
+            const summaryColor = hasFail ? "#ff3333" : (totalMisfiresFound > 0 ? "#ff9900" : "#00ffcc");
+
+            let htmlContent = `
+                <div class="box-title">📋 On-Board 자가진단 검사 결과</div>
+                <div class="env-line" style="border-left-color: ${summaryColor};">⏰ 측정시각: ${targetTime} | 🌡️ ECT: ${targetEct}</div>
+                
+                <div class="stat-line" style="border-left-color: ${isMilOn ? '#ff3333' : '#00ffcc'}; font-size: 0.9rem;">
+                    엔진 경고등(MIL): <span style="color:${isMilOn ? '#ff3333' : '#00ffcc'}; font-weight:bold;">${isMilOn ? '⚠️ ON (이상 검출)' : 'OFF 정상'}</span> 
+                    | 고장코드(DTC) 수: <span class="highlight">${dtcCount} 개</span>
+                </div>
+                
+                <div class="monitor-grid">
+            `;
+
+            monitorItems.forEach(item => {
+                const isFail = item.status === "FAIL";
+                const isWarning = item.status.includes("미세감지");
+                let itemColor = "#00ffcc";
+                if (isFail) itemColor = "#ff3333";
+                else if (isWarning) itemColor = "#ff9900";
+
+                htmlContent += `
+                    <div class="monitor-item" style="border-left: 3px solid ${itemColor};">
+                        <span style="color:#aaa;">${item.name}</span>
+                        <span style="color:${itemColor}; font-weight:bold;">${item.status}</span>
+                    </div>
+                `;
+            });
+
+            htmlContent += `
+                </div>
+            `;
+
+            // 미세 실화 누적 카운트 발견 시, 구체적인 실린더 식별 번호와 발생 건수를 시각적으로 노출
+            if (totalMisfiresFound > 0) {
+                htmlContent += `
+                    <div class="stat-line" style="border-left-color: #ff9900; background: #1a1105; margin-top: 10px;">
+                        ⚠️ <span style="color:#ff9900; font-weight:bold;">[미세 실화 세부 감지 내역]</span> 모니터 결과는 PASS이나 실린더별 추적 결과 미세 실화(Misfire)가 포착되었습니다:<br>
+                        <div style="margin-top: 5px; padding-left: 15px; display: flex; gap: 20px; flex-wrap: wrap;">
+                            ${misfireDetails.join(" | ")}
+                        </div>
+                    </div>
+                `;
+            }
+
+            htmlContent += `
+                <div class="verdict" style="border-color:${summaryColor}; color:${summaryColor}; margin-top: 5px;">
+                    ${hasFail ? '❌ 주요 감시장치 중 일부 시스템이 준비 미완료(FAIL) 상태이거나 고장코드가 존재합니다.' : 
+                     (totalMisfiresFound > 0 ? `⚠️ 엔진 경고등 점등 기준 미만의 미세 실화가 총 ${totalMisfiresFound}건 검출되었습니다. 엔진 및 해당 실린더의 플러그/코일 노후화를 확인하십시오.` : '✅ 모든 핵심 On-Board 시스템 모니터링 합격. 전자/기계적 진단 장치 제어 시스템이 최고 안정 상태입니다.')}
+                </div>
+            `;
+
+            reportDisplay.innerHTML = htmlContent;
+            memoryBank.obdMonitor.html = htmlContent;
+            memoryBank.obdMonitor.timestamp = targetTime;
+            memoryBank.obdMonitor.ect = targetEct;
+
+            isCollecting = false;
+            setButtonsDisabled(false);
+            updateBackupButtonState();
+        }
+
+        // 백업 시 메모리 뱅크 디스크 아카이빙 로직
+        document.getElementById('btnSaveMemory').onclick = () => {
+            try {
+                memoryBank.carInfo.plate = document.getElementById('car_plate').value;
+                memoryBank.carInfo.model = document.getElementById('car_model').value;
+                memoryBank.carInfo.mileage = document.getElementById('car_mileage').value;
+                memoryBank.carInfo.cylinders = document.getElementById('car_cylinders').value;
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(memoryBank));
+                const downloadAnchor = document.createElement('a');
+                
+                const plateStr = memoryBank.carInfo.plate ? memoryBank.carInfo.plate.replace(/\s/g, "_") + "_" : "";
+                const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+                
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `Y4_Memory_${plateStr}${dateStr}.json`);
+                document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
+            } catch (e) { alert("백업 실패: " + e.message); }
+        };
+
+        document.getElementById('btnLoadMemory').onclick = () => { document.getElementById('fileChooser').click(); };
+        document.getElementById('fileChooser').onchange = (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const loadedBank = JSON.parse(event.target.result);
+                    if (!loadedBank.rpm || !loadedBank.map || !loadedBank.osc) throw new Error("규격 불일치 파일");
+                    
+                    memoryBank = loadedBank;
+                    
+                    if (memoryBank.carInfo) {
+                        document.getElementById('car_plate').value = memoryBank.carInfo.plate || "";
+                        document.getElementById('car_model').value = memoryBank.carInfo.model || "";
+                        document.getElementById('car_mileage').value = memoryBank.carInfo.mileage || "";
+                        document.getElementById('car_cylinders').value = memoryBank.carInfo.cylinders || "4";
                     }
-                }
-            }
-        }
-        document.getElementById("data-speed").innerText = `${lastResponseTime}ms`;
-        renderPopGraphs();
-    }
 
-    // --- 그래프 모드 수정 로직 (지시사항 반영) ---
-    function openGraphMode(firstName) {
-        activeSensors = [];
-        document.getElementById("graph-list").innerHTML = "";
-        document.getElementById("merged-graph-container").innerHTML = "";
-        addSensor(firstName);
-        document.getElementById("modal-overlay").style.display = "flex";
-    }
+                    switchEngineViewMode(memoryBank.carInfo.cylinders || 4);
 
-    function addSensor(name) {
-        if (activeSensors.find(s => s.name === name)) return;
-        
-        // Warm-Cool 대비 색상 임의 선택
-        const isWarm = activeSensors.filter(s => !s.isMerged).length % 2 === 0;
-        const color = isWarm ? warmColors[Math.floor(Math.random()*2)] : coolColors[Math.floor(Math.random()*2)];
+                    if (memoryBank.rpm.html) document.getElementById('report_rpm').innerHTML = memoryBank.rpm.html;
+                    if (memoryBank.map.html) document.getElementById('report_map').innerHTML = memoryBank.map.html;
+                    if (memoryBank.osc.html) document.getElementById('report_osc').innerHTML = memoryBank.osc.html;
+                    
+                    if (memoryBank.obdMonitor && memoryBank.obdMonitor.html) {
+                        document.getElementById('report_obd_monitor').innerHTML = memoryBank.obdMonitor.html;
+                    }
+                    
+                    updateBackupButtonState();
+                    alert("📂 복원 성공: 아카이브된 정밀 리포트 및 미세 실화 추적 세부 내역을 정상 복구했습니다.");
+                } catch (err) { alert("복원 실패: " + err.message); }
+            };
+            reader.readAsText(file);
+        };
 
-        const unit = document.createElement("div");
-        unit.className = "graph-unit";
-        unit.id = `unit-${name}`;
-        unit.innerHTML = `
-            <div class="graph-header">
-                <span class="graph-title" style="color:${color}">${name.toUpperCase()}</span>
-                <div class="check-area">
-                    <input type="checkbox" class="merge-chk" data-name="${name}"> 병합
-                </div>
-            </div>
-            <canvas id="canvas-${name}"></canvas>
-        `;
-        document.getElementById("graph-list").appendChild(unit);
-        activeSensors.push({ name, color, isMerged: false });
-    }
+        document.getElementById('btnConnect').onclick = async () => {
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 38400 });
+                writer = port.writable.getWriter(); reader = port.readable.getReader();
+                
+                document.getElementById('status').innerText = "✅ 프로토콜 초기화 중...";
+                await send("ATZ", 1000); await send("ATE0"); await send("ATH0");
+                await send("ATS0"); await send("ATSP0");
+                
+                await detectEngineType();
+                dashboardLoop();
+            } catch (e) { alert("연결 실패: " + e.message); }
+        };
 
-    function renderPopGraphs() {
-        if (document.getElementById("modal-overlay").style.display !== "flex") return;
+        document.getElementById('btnRpmAnalysis').onclick = () => runAnalysis('RPM');
+        document.getElementById('btnMapAnalysis').onclick = () => runAnalysis('MAP');
+        document.getElementById('btnObdMonitor').onclick = runObdMonitorAnalysis;
 
-        activeSensors.forEach(s => {
-            if (!s.isMerged) {
-                const canvas = document.getElementById(`canvas-${s.name}`);
-                if (canvas) drawGraphToCanvas(canvas, s.name, s.color);
-            }
-        });
-
-        const mergedCanvas = document.getElementById("canvas-merged");
-        if (mergedCanvas) drawMergedCanvas(mergedCanvas);
-    }
-
-    function drawGraphToCanvas(canvas, sensorName, color) {
-        const ctx = canvas.getContext("2d");
-        const data = historyData[sensorName] || [];
-        
-        // 고해상도 선명도 처리
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = canvas.clientWidth * dpr;
-        canvas.height = canvas.clientHeight * dpr;
-        ctx.scale(dpr, dpr);
-
-        ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-        if (data.length < 2) return;
-
-        const max = Math.max(...data) * 1.1 || 1;
-        const min = Math.min(...data) * 0.9 || 0;
-        const range = max - min;
-        const avg = (data.reduce((a, b) => a + b, 0) / data.length).toFixed(2);
-        const now = data[data.length - 1];
-
-        // 파형 그리기
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        data.forEach((v, i) => {
-            const x = (i / (MAX_HISTORY - 1)) * canvas.clientWidth;
-            const y = canvas.clientHeight - ((v - min) / range) * canvas.clientHeight;
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-
-        // 텍스트 오버레이 (원본 형식 준수 + 선명한 폰트)
-        ctx.fillStyle = color;
-        ctx.font = "12px 'Consolas', monospace";
-        ctx.fillText(`MAX: ${max.toFixed(2)}`, 10, 20);
-        ctx.fillText(`MIN: ${min.toFixed(2)}`, 10, canvas.clientHeight - 10);
-        ctx.fillText(`AVG: ${avg}`, canvas.clientWidth / 2 - 30, 20);
-        
-        ctx.font = "bold 14px 'Consolas', monospace";
-        ctx.textAlign = "right";
-        ctx.fillText(`NOW: ${now}`, canvas.clientWidth - 10, 25);
-        ctx.textAlign = "left";
-    }
-
-    function drawMergedCanvas(canvas) {
-        const ctx = canvas.getContext("2d");
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = canvas.clientWidth * dpr;
-        canvas.height = canvas.clientHeight * dpr;
-        ctx.scale(dpr, dpr);
-        ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-
-        const mergedList = activeSensors.filter(s => s.isMerged);
-        mergedList.forEach((s, idx) => {
-            const data = historyData[s.name] || [];
-            if (data.length < 2) return;
-
-            const max = Math.max(...data) * 1.1 || 1;
-            const min = Math.min(...data) * 0.9 || 0;
-            const range = max - min;
-
-            ctx.strokeStyle = s.color;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            data.forEach((v, i) => {
-                const x = (i / (MAX_HISTORY - 1)) * canvas.clientWidth;
-                const y = canvas.clientHeight - ((v - min) / range) * canvas.clientHeight;
-                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-
-            // 병합 그래프용 선명한 수치 표기
-            ctx.fillStyle = s.color;
-            ctx.font = "11px 'Consolas', monospace";
-            ctx.fillText(`${s.name.toUpperCase()}: ${data[data.length-1]}`, 10, 20 + (idx * 15));
-        });
-    }
-
-    // --- 이벤트 핸들러 ---
-    document.getElementById("sensor-select").onchange = (e) => {
-        if (e.target.value) addSensor(e.target.value);
-    };
-
-    document.getElementById("merge-btn").onclick = () => {
-        const chks = document.querySelectorAll('.merge-chk:checked');
-        if (chks.length === 0) return;
-
-        chks.forEach(chk => {
-            const name = chk.dataset.name;
-            const sensor = activeSensors.find(s => s.name === name);
-            if (sensor) {
-                sensor.isMerged = true;
-                const unit = document.getElementById(`unit-${name}`);
-                if (unit) unit.remove(); // 개별 그래프 삭제
-            }
-        });
-
-        let mArea = document.getElementById("merged-graph-unit");
-        if (!mArea) {
-            mArea = document.createElement("div");
-            mArea.id = "merged-graph-unit";
-            mArea.className = "graph-unit";
-            mArea.style.borderTop = "2px dashed #0f0";
-            mArea.innerHTML = `
-                <div class="graph-header"><span class="graph-title" style="color:#fff">MERGED ANALYSIS</span></div>
-                <canvas id="canvas-merged" style="height:300px;"></canvas>
-            `;
-            document.getElementById("merged-graph-container").appendChild(mArea);
-        }
-        renderPopGraphs();
-    };
-
-    document.getElementById("pause-btn").onclick = () => {
-        isPaused = true;
-        document.getElementById("pause-btn").style.display = "none";
-        document.getElementById("resume-btn").style.display = "inline-block";
-    };
-
-    document.getElementById("resume-btn").onclick = () => {
-        isPaused = false;
-        document.getElementById("resume-btn").style.display = "none";
-        document.getElementById("pause-btn").style.display = "inline-block";
-    };
-
-    document.getElementById("close-modal").onclick = () => {
-        document.getElementById("modal-overlay").style.display = "none";
-        isPaused = false;
-    };
-
-    // --- 원본 보존: 엔진 분석 로직 ---
-    async function startAnalysis(mode) {
-        if (!isConnected || isAnalyzing) return;
-        isAnalyzing = true;
-        const isRPM = mode === 'rpm';
-        const cyl = parseInt(document.getElementById("cyl").value) || 6;
-        
-        if (isRPM) document.getElementById("graph").innerHTML = "";
-        document.getElementById("status").innerText = "ANALYZING...";
-        document.getElementById("progress-container").style.display = "block";
-        document.getElementById("result-text").style.display = "none";
-
-        const duration = isRPM ? 60000 : 30000;
-        const startTime = Date.now();
-        const sensorData = [];
-        const targetPid = isRPM ? "010C" : "010B";
-        const marker = isRPM ? "410C" : "410B";
-
-        while (Date.now() - startTime < duration) {
-            const res = await send(targetPid, 120);
-            const pos = res.indexOf(marker);
-            if (pos !== -1) {
-                let val = isRPM ? Math.round(parseInt(res.substring(pos+4, pos+8), 16) / 4) : parseInt(res.substring(pos+4, pos+6), 16);
-                if (!isNaN(val)) {
-                    sensorData.push(val);
-                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                    const progress = (elapsed / (duration / 1000)) * 100;
-                    document.getElementById("live-value").innerText = `${val} ${isRPM?'RPM':'kPa'}`;
-                    document.getElementById("progress-bar").style.width = `${progress}%`;
-                    document.getElementById("progress-text").innerText = `${elapsed} / ${duration/1000} 초 (샘플: ${sensorData.length})`;
-                }
-            }
-        }
-
-               document.getElementById("progress-bar").style.width = "100%";
-        document.getElementById("status").innerText = "READY";
-        document.getElementById("status").style.color = "#0f0";
-
-        if (isRPM) {
-            const delta = [];
-            for (let i = 1; i < sensorData.length; i++) delta.push(Math.abs(sensorData[i] - sensorData[i-1]));
-            const avgDelta = Array.from({length:cyl}, (_,idx) => {
-                const c = delta.filter((_,i) => i % cyl === idx);
-                return c.length ? c.reduce((a,b)=>a+b,0)/c.length : 0;
-            });
-            const minF = Math.min(...avgDelta.filter(v=>v>0)) || 1;
-            const norm = avgDelta.map(v => Math.max(10, Math.min(100, Math.round((minF/v)*100))));
-            drawGraph(norm);
-
-            const avgScore = Math.round(norm.reduce((a,b)=>a+b,0)/cyl);
-            const minScore = Math.min(...norm);
-            const dev = 100 - minScore;
-            
-            // 2129의 세분화된 등급 판정 로직
-            let grade = dev < 7 ? "최상 (Excellent)" : (dev < 15 ? "양호 (Good)" : "점검 필요 (Check)");
-            let color = dev < 7 ? "#0f0" : (dev < 15 ? "#ff0" : "#f00");
-
-            document.getElementById("result-text").innerHTML = `
-                <div style="font-size:20px; color:${color}; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px;">
-                    ✅ 엔진 균형 분석 완료: <span style="font-weight:bold;">${grade}</span>
-                </div>
-                종합 밸런스 점수: <span style="font-size:24px; color:#0ff;">${avgScore}점</span><br>
-                총 수집 샘플: <strong>${sensorData.length}개</strong><br><br>
-                ${norm.map((v,i)=>`실린더 #${i+1}: <strong>${v}%</strong> ${v>=90?'🟢':(v>=80?'🟡':'🔴')}`).join('<br>')}
-            `;
-        } else {
-            // 2129의 상세 지표 포함 헤드 분석 리포트
-            const mean = sensorData.reduce((a,b)=>a+b,0)/sensorData.length;
-            const std = Math.sqrt(sensorData.map(x=>Math.pow(x-mean,2)).reduce((a,b)=>a+b,0)/sensorData.length);
-            const cv = (std / mean) * 100;
-            const score = Math.max(10, Math.min(100, Math.round(100 - (std * 15))));
-            const maxDev = Math.max(...sensorData) - Math.min(...sensorData);
-            
-            let headStatus = score >= 90 ? "최상" : (score >= 80 ? "양호하나 주의" : "헤드 기밀성 저하 의심");
-            let headColor = score >= 90 ? "#0f0" : (score >= 80 ? "#ff0" : "#f00");
-
-            document.getElementById("result-text").innerHTML = `
-                <div style="font-size:20px; color:${headColor}; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px;">
-                    ✅ 헤드 성능 (엔진 호흡) 분석 완료
-                </div>
-                평균 MAP: <span style="color:#0ff;">${mean.toFixed(1)} kPa</span><br>
-                엔진 호흡 점수: <span style="font-size:28px;">${score}점</span> <span class="badge" style="background:${headColor}; color:#000;">${headStatus}</span><br>
-                <div style="margin-top:15px; padding:10px; background:#111; border-radius:6px; border:1px solid #222;">
-                    <span style="color:#888;">② 상세 지표</span><br>
-                    변동 표준편차: <span style="color:#0f0;">${std.toFixed(2)} kPa</span><br>
-                    변동계수 (CV): <span style="color:#0f0;">${cv.toFixed(2)} %</span><br>
-                    최대 순간 변동 폭: <span style="color:#0f0;">${maxDev.toFixed(1)} kPa</span>
-                </div>
-            `;
-        }
-        document.getElementById("result-text").style.display = "block";
-        isAnalyzing = false;
-    }
-
-    function drawGraph(data) {
-        const g = document.getElementById("graph"); g.innerHTML = "";
-        data.forEach((v,i) => {
-            const c = document.createElement("div"); c.className="bar-container";
-            const b = document.createElement("div"); b.className="bar"; 
-            b.style.height=(v * 2.2)+"px"; b.style.background=v>=90?"#2ecc71":(v>=80?"#f1c40f":"#e74c3c");
-            const l = document.createElement("div"); l.className="bar-label"; 
-            l.innerHTML=`<span class="bar-score">${v}%</span><br>#${i+1}`;
-            c.append(b,l); g.append(c);
-        });
-    }
-
-    document.getElementById("connect").onclick = async () => {
-        try {
-            port = await navigator.serial.requestPort();
-            await port.open({ baudRate: 115200 });
-            writer = port.writable.getWriter(); reader = port.readable.getReader();
-            await send("ATZ", 1000); await send("ATE0"); await send("ATL0"); await send("ATSP0"); await send("ATST0A");
-            isConnected = true;
-            document.getElementById("connect").disabled = true; document.getElementById("analyze").disabled = false;
-            document.getElementById("headAnalyze").disabled = false; document.getElementById("disconnect").disabled = false;
-            initSensorMonitor();
-            monitorTimer = setInterval(updateSensorValues, 1100);
-            document.getElementById("status").innerText = "CONNECTED";
-        } catch (err) { alert("연결 실패"); }
-    };
-
-    document.getElementById("analyze").onclick = () => startAnalysis('rpm');
-    document.getElementById("headAnalyze").onclick = () => startAnalysis('map');
-    document.getElementById("disconnect").onclick = () => location.reload();
-</script>
+        document.getElementById('btnOsc').onclick = () => {
+            const currentCyl = document.getElementById('car_cylinders').value;
+            document.getElementById('report_osc').innerHTML = `
+                <div class="box-title">🌡️ 촉매 OSC 진단 준비 (${currentCyl}기통 모드)</div>
+                <div class="verdict" style="border-color:#ff3333; margin-top:0;">
+                    <b style="color:#ff3333;">[OSC 진단 대기]</b><br>
+                   반드시 P모드 상태 확인, 가속 페달 풀엑셀 후 바로 발을 떼세요.<br>
+                    <button id="realStartOsc" style="margin-top:15px; width:100%">지금 탐색 시작</button>
+                </div>`;
+            document.getElementById('realStartOsc').onclick = () => startOscTestPro();
+        };
+    </script>
 </body>
 </html>
